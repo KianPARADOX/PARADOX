@@ -1,0 +1,258 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Hamster Combat</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f0f0f0;
+            color: #333;
+            margin: 0;
+            padding: 0;
+        }
+        .taskbar {
+            background: #333;
+            padding: 10px 0;
+            border-radius: 10px;
+            text-align: center;
+            margin-bottom: 20px;
+        }
+        .taskbar button {
+            background-color: #ff6347;
+            color: white;
+            padding: 8px 20px;
+            border: none;
+            border-radius: 5px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 0 5px;
+        }
+        .taskbar button:hover {
+            background-color: #e5533d;
+        }
+        .taskbar span {
+            display: block;
+            color: #fff;
+            margin: 5px 0;
+        }
+        .content {
+            max-width: 800px;
+            margin: 0 auto;
+            background: #fff;
+            padding: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        .button {
+            background-color: #ff6347;
+            color: white;
+            padding: 10px 20px;
+            border: none;
+            border-radius: 10px;
+            font-size: 1em;
+            cursor: pointer;
+            margin: 5px;
+        }
+        .button:active {
+            background-color: #e5533d;
+        }
+        .hamster {
+            width: 150px;
+            margin-bottom: 20px;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 0, 0, 0.1);
+        }
+        .progress-bar, .energy-bar {
+            width: 100%;
+            background-color: #ddd;
+            border-radius: 5px;
+            margin-bottom: 20px;
+        }
+        .progress-bar div, .energy-bar div {
+            height: 10px;
+            background-color: #ff6347;
+            border-radius: 5px;
+        }
+    </style>
+</head>
+<body>
+    <div class="taskbar">
+        <button onclick="goToPage('exchange')">Exchange</button>
+        <button onclick="goToPage('shop')">Shop</button>
+        <span>Coins: <span id="coinCount">0</span></span>
+        <span>Level: <span id="level">1</span></span>
+        <span>Profit per hour: <span id="profit">0</span></span>
+        <span>Energy: <span id="energyCount">1000</span>/<span id="maxEnergy">1000</span></span>
+        <span>Earn per tap: <span id="earnPerTap">1</span></span>
+        <div class="progress-bar">
+            <div id="progress"></div>
+        </div>
+        <div class="energy-bar">
+            <div id="energy"></div>
+        </div>
+    </div>
+
+    <div id="exchange" class="container content">
+        <div class="counter">Coins: <span id="coinCountDisplay">0</span></div>
+        <div class="level-info">
+            <span>Level: <span id="levelDisplay">1</span></span>
+        </div>
+        <img src="https://via.placeholder.com/150" alt="Hamster" class="hamster">
+        <button class="button" onclick="incrementCoins()">Tap to earn</button>
+    </div>
+
+    <div id="shop" class="container content" style="display: none;">
+        <button class="button" onclick="buyProfit(500, 4000)">Buy 500 Profit (4000 coins)</button>
+        <button class="button" onclick="buyProfit(1000, 7000)">Buy 1000 Profit (7000 coins)</button>
+        <button class="button" onclick="buyProfit(5000, 20000)">Buy 5000 Profit (20000 coins)</button>
+        <button class="button" onclick="increaseEnergy()">Increase Energy Limit (5000 coins)</button>
+        <button class="button" onclick="increaseEarnPerTap()">Increase Earn per Tap (1000 coins)</button>
+    </div>
+
+    <script>
+        let currentPage = 'exchange'; // Default page
+        let coins = 0;
+        let level = 1;
+        let profit = 0;
+        let energy = 1000;
+        let maxEnergy = 1000;
+        let earnPerTap = 1;
+
+        document.addEventListener("DOMContentLoaded", function() {
+            if (localStorage.getItem("coinCount")) {
+                coins = parseInt(localStorage.getItem("coinCount"));
+                document.getElementById("coinCount").textContent = coins;
+                document.getElementById("coinCountDisplay").textContent = coins;
+            }
+            if (localStorage.getItem("level")) {
+                level = parseInt(localStorage.getItem("level"));
+                document.getElementById("level").textContent = level;
+                document.getElementById("levelDisplay").textContent = level;
+            }
+            if (localStorage.getItem("profit")) {
+                profit = parseInt(localStorage.getItem("profit"));
+                document.getElementById("profit").textContent = profit;
+            }
+            if (localStorage.getItem("maxEnergy")) {
+                maxEnergy = parseInt(localStorage.getItem("maxEnergy"));
+                document.getElementById("maxEnergy").textContent = maxEnergy;
+            }
+            if (localStorage.getItem("earnPerTap")) {
+                earnPerTap = parseInt(localStorage.getItem("earnPerTap"));
+                document.getElementById("earnPerTap").textContent = earnPerTap;
+            }
+            updateProgressBar();
+            updateEnergyBar();
+            setInterval(mineCoins, 3600000);
+        });
+
+        function goToPage(page) {
+            document.getElementById(currentPage).style.display = 'none';
+            document.getElementById(page).style.display = 'block';
+            currentPage = page;
+        }
+
+        function incrementCoins() {
+            if (energy > 0) {
+                coins += earnPerTap;
+                energy -= 50;
+                document.getElementById("coinCount").textContent = coins;
+                document.getElementById("coinCountDisplay").textContent = coins;
+                localStorage.setItem("coinCount", coins);
+                updateProgressBar();
+                updateEnergyBar();
+                checkLevelUp();
+            } else {
+                alert("Not enough energy! Wait for it to recharge.");
+            }
+        }
+
+        function buyProfit(amount, cost) {
+            if (coins >= cost) {
+                profit += amount;
+                coins -= cost;
+                document.getElementById("profit").textContent = profit;
+                document.getElementById("coinCount").textContent = coins;
+                document.getElementById("coinCountDisplay").textContent = coins;
+                localStorage.setItem("profit", profit);
+                localStorage.setItem("coinCount", coins);
+            } else {
+                alert("Not enough coins to buy profit.");
+            }
+        }
+
+        function increaseEnergy() {
+            if (coins >= 5000) {
+                maxEnergy += 1000;
+                coins -= 5000;
+                document.getElementById("coinCount").textContent = coins;
+                document.getElementById("coinCountDisplay").textContent = coins;
+                document.getElementById("maxEnergy").textContent = maxEnergy;
+                localStorage.setItem("maxEnergy", maxEnergy);
+                localStorage.setItem("coinCount", coins);
+                updateEnergyBar();
+            } else {
+                alert("Not enough coins to increase energy.");
+            }
+        }
+
+        function increaseEarnPerTap() {
+            if (coins >= 1000) {
+                earnPerTap += 1;
+                coins -= 1000;
+                document.getElementById("coinCount").textContent = coins;
+                document.getElementById("coinCountDisplay").textContent = coins;
+                document.getElementById("earnPerTap").textContent = earnPerTap;
+                localStorage.setItem("earnPerTap", earnPerTap);
+                localStorage.setItem("coinCount", coins);
+            } else {
+                alert("Not enough coins to increase earn per tap.");
+            }
+        }
+
+        function mineCoins() {
+            coins += profit;
+            document.getElementById("coinCount").textContent = coins;
+            document.getElementById("coinCountDisplay").textContent = coins;
+            localStorage.setItem("coinCount", coins);
+            updateProgressBar();
+            checkLevelUp();
+        }
+
+        function checkLevelUp() {
+            let levelUpThreshold = 5000 * level;
+            if (coins >= levelUpThreshold) {
+                level += 1;
+                document.getElementById("level").textContent = level;
+                document.getElementById("levelDisplay").textContent = level;
+                localStorage.setItem("level", level);
+                alert("Level up! You are now at level " + level);
+            }
+        }
+
+        function updateProgressBar() {
+            let levelUpThreshold = 5000 * level;
+            let progress = (coins % levelUpThreshold) / levelUpThreshold * 100;
+            document.getElementById("progress").style.width = progress + "%";
+        }
+
+        function updateEnergyBar() {
+            let energyPercentage = (energy / maxEnergy) * 100;
+            document.getElementById("energy").style.width = energyPercentage + "%";
+            document.getElementById("energyCount").textContent = energy;
+        }
+
+        setInterval(function() {
+            if (energy < maxEnergy) {
+                energy += 20; // Regain 20 energy every second
+                if (energy > maxEnergy) {
+                    energy = maxEnergy;
+                }
+                updateEnergyBar();
+            }
+        }, 500); // Update energy every half-second for faster regeneration
+    </script>
+</body>
+</html>
